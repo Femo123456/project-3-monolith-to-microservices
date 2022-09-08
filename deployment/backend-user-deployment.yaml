@@ -2,23 +2,82 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: backend-user
+  labels:
+    service: backend-user
+    name: backend-user
 spec:
+  replicas: 2
   selector:
     matchLabels:
-      run: backend-user
-  replicas: 2
+      service: backend-user
   template:
     metadata:
       labels:
-        run: backend-user
+        service: backend-user
     spec:
       containers:
-      - name: backend-user
-        image: docker.io/femo123456/udagram-api-user:v1
-        ports:
-        - containerPort: 80
-        resources:
-          limits:
-            cpu: 500m
-          requests:
-            cpu: 200m
+        - image: docker.io/femo123456/udagram-api-user:v1
+          name: backend-user
+          imagePullPolicy: Always
+          resources:
+            requests:
+              memory: "128Mi"
+              cpu: "250m"
+            limits:
+              memory: "2048Mi"
+              cpu: "500m"
+          env:
+            - name: URL
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: URL
+            - name: AWS_BUCKET
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: AWS_BUCKET
+            - name: AWS_PROFILE
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: AWS_PROFILE
+            - name: AWS_REGION
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: AWS_REGION
+            - name: JWT_SECRET
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: JWT_SECRET
+            - name: POSTGRES_DB
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: POSTGRES_DB
+            - name: POSTGRES_HOST
+              valueFrom:
+                configMapKeyRef:
+                  name: myconfig
+                  key: POSTGRES_HOST
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                configMapKeyRef:
+                  name: postgrescred
+                  key: POSTGRES_PASSWORD
+            - name: POSTGRES_USERNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: postgrescred
+                  key: POSTGRES_USERNAME
+          volumeMounts:
+            - name: mysecret
+              mountPath: "/root/.aws/"
+              readOnly: true
+      restartPolicy: Always
+      volumes:
+        - name: mysecret
+          secret:
+            secretName: mysecret
